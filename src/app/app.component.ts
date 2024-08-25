@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { Tarefa } from './tarefa';
 import { CommonModule } from '@angular/common';
 import { ItemComponent } from './item/item.component';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-root',
@@ -13,30 +14,48 @@ import { ItemComponent } from './item/item.component';
 export class AppComponent {
   title = 'TODOapp';
   arrayDeTarefas: Tarefa[] = [];
+  apiUrl: string;
 
-  constructor() {
+  constructor(private http: HttpClient) {
+    this.apiUrl = 'http://localhost:3000';
     this.READ_tarefas();
   }
 
   CREATE_tarefa(descricaoNovaTarefa: string) {
     var novaTarefa = new Tarefa(descricaoNovaTarefa, false);
-    this.arrayDeTarefas.unshift(novaTarefa);
+    this.http
+      .post<Tarefa>(`${this.apiUrl}/api/post`, novaTarefa)
+      .subscribe((resultado) => {
+        console.log(resultado);
+        this.READ_tarefas();
+      });
   }
 
   READ_tarefas() {
-    this.arrayDeTarefas = [
-      new Tarefa('Estudar Angular', false),
-      new Tarefa('Estudar TypeScript', true),
-      new Tarefa('Estudar JavaScript', false),
-      new Tarefa('Estudar HTML', false),
-      new Tarefa('Estudar CSS', false),
-    ];
+    this.http
+      .get<Tarefa[]>(`${this.apiUrl}/api/getAll`)
+      .subscribe((resultado) => (this.arrayDeTarefas = resultado));
+  }
+
+  UPDATE_tarefa(tarefaAserModificada: Tarefa) {
+    var indice = this.arrayDeTarefas.indexOf(tarefaAserModificada);
+    var id = this.arrayDeTarefas[indice]._id;
+    this.http
+      .patch<Tarefa>(`${this.apiUrl}/api/update/${id}`, tarefaAserModificada)
+      .subscribe((resultado) => {
+        console.log(resultado);
+        this.READ_tarefas();
+      });
   }
 
   DELETE_tarefa(tarefaAserRemovida: Tarefa) {
-    this.arrayDeTarefas.splice(
-      this.arrayDeTarefas.indexOf(tarefaAserRemovida),
-      1
-    );
+    var indice = this.arrayDeTarefas.indexOf(tarefaAserRemovida);
+    var id = this.arrayDeTarefas[indice]._id;
+    this.http
+      .delete<Tarefa>(`${this.apiUrl}/api/delete/${id}`)
+      .subscribe((resultado) => {
+        console.log(resultado);
+        this.READ_tarefas();
+      });
   }
 }
